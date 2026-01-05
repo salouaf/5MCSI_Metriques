@@ -2,38 +2,48 @@
   <head>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
-      google.charts.load("current", {packages:["corechart"]});
-      google.charts.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var data = new google.visualization.DataTable();
-        dataTable.addColumn('string', 'Mois');
-        dataTable.addColumn('number', 'Température');
+      // Charger Google Charts
+      google.charts.load("current", { packages: ["corechart"] });
+      google.charts.setOnLoadCallback(loadData);
 
-// Ici on transforme data.results en mois + temp
-  const moisNoms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  data.results.forEach(entry => {
-    var date = new Date(entry.Jour * 1000);
-    var mois = moisNoms[date.getMonth()];
-    dataTable.addRow([mois, entry.temp]);
-  });
-          
-//options de graphique
+      // 1️⃣ Fonction pour récupérer les données depuis l'API
+      function loadData() {
+        fetch('/tawarano/')
+          .then(response => response.json())
+          .then(data => {
+            drawChart(data.results); // on passe les résultats à la fonction de dessin
+          })
+          .catch(error => {
+            console.error("Erreur lors de la récupération des données :", error);
+          });
+      }
+
+      // 2️⃣ Fonction pour dessiner le graphique
+      function drawChart(apiResults) {
+        // Créer le tableau pour Google Charts
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Mois');
+        data.addColumn('number', 'Température');
+
+        // Transformer les données de l'API en mois + température
+        const moisNoms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+        apiResults.forEach(entry => {
+          var date = new Date(entry.Jour * 1000); // timestamp → date
+          var mois = moisNoms[date.getMonth()];   // récupérer le mois
+          data.addRow([mois, entry.temp]);        // ajouter la ligne
+        });
+
+        // Options du graphique
         var options = {
           title: 'Évolution des températures de la ville de Tawarano',
           legend: { position: 'none' },
           hAxis: { title: 'Mois' },
           vAxis: { title: 'Température (°C)' }
         };
-//designer le histograme
-        var chart = new google.visualization.Histogram(document.getElementById('chart_div'));
-        chart.draw(data, options);
 
-   // Récupération de données depuis notre API /tawarano/
-        fetch('/tawarano/')
-        .then(response => response.json())
-        .then(data => {
-        drawChart(data);
-    })
+        // Créer et dessiner l'histogramme
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
       }
     </script>
   </head>
